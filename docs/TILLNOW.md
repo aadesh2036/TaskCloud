@@ -1,10 +1,10 @@
 # TILLNOW
 
 ## Last updated
-2026-11-07 10:58 IST, by Claude Code session (M6)
+2026-11-07 10:58 IST, by Claude Code session (M7)
 
 ## Current state
-The local app, templates and deploy scripts are complete. Script flow, order and failure handling are tested against a fake aws CLI, and nothing has been run against real AWS.
+The local app, templates, scripts and IAM policies are complete and tested locally. Nothing has been deployed.
 
 ## Milestones
 | ID | Milestone | Status | Notes |
@@ -16,17 +16,22 @@ The local app, templates and deploy scripts are complete. Script flow, order and
 | M4 | React + Vite frontend | Done | Builds on Node 18 and 20; browser-tested |
 | M5 | CloudFormation templates | Done | cfn-lint clean; design checks in test_infra.py |
 | M6 | Deploy scripts | Done | bash -n and shellcheck clean; flow tested with a fake aws CLI |
-| M7 | IAM policy files and IAM_ACL.md | Not started | |
+| M7 | IAM policy files and IAM_ACL.md | Done | Every script call checked against its owner's policy |
 | M8 | Full local verification and smoke test | Not started | |
 | M9 | Final docs pass | Not started | |
 
 ## Next step
-Start M7: write `iam/policies/*.json` and test them against what the scripts call.
+Start M8: run the full local verification and fix what it finds.
 
 ## Open questions and blockers
 - None yet.
 
 ## Change log
+### 2026-11-07 10:58 IST, M7
+- **Files:** `iam/policies/*`, `backend/tests/test_iam.py`, `docs/IAM_ACL.md`
+- **Tests:** pytest passed; ruff clean
+- **Decisions:** D-020 implemented
+
 ### 2026-11-07 10:58 IST, M6
 - **Files:** `scripts/*`, `backend/tests/test_scripts.py`, `docs/DEPLOYMENT.md`
 - **Tests:** pytest 352 passed; shellcheck clean; bash -n clean

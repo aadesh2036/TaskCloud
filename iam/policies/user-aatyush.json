@@ -1,0 +1,82 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DeployOwnStack",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:CreateStack",
+        "cloudformation:UpdateStack",
+        "cloudformation:CreateChangeSet",
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:ExecuteChangeSet",
+        "cloudformation:DeleteChangeSet",
+        "cloudformation:DescribeStacks",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:GetTemplateSummary"
+      ],
+      "Resource": "arn:aws:cloudformation:ap-south-1:<ACCOUNT_ID>:stack/taskcloud-api/*"
+    },
+    {
+      "Sid": "UploadLambdaCode",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject"
+      ],
+      "Resource": "arn:aws:s3:::taskcloud-artifacts-<ACCOUNT_ID>-ap-south-1/*"
+    },
+    {
+      "Sid": "ListArtifactBucket",
+      "Effect": "Allow",
+      "Action": "s3:ListBucket",
+      "Resource": "arn:aws:s3:::taskcloud-artifacts-<ACCOUNT_ID>-ap-south-1"
+    },
+    {
+      "Sid": "ReadApiGateway",
+      "Effect": "Allow",
+      "Action": "apigateway:GET",
+      "Resource": [
+        "arn:aws:apigateway:ap-south-1::/apis",
+        "arn:aws:apigateway:ap-south-1::/apis/*"
+      ]
+    },
+    {
+      "Sid": "ReadLambdaConfiguration",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetPolicy",
+        "lambda:ListTags",
+        "lambda:ListVersionsByFunction",
+        "lambda:ListAliases"
+      ],
+      "Resource": "arn:aws:lambda:ap-south-1:<ACCOUNT_ID>:function:taskcloud-*"
+    },
+    {
+      "Sid": "ListLambdaFunctions",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:ListFunctions",
+        "lambda:GetAccountSettings"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ReadAttachmentNotificationSettings",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetBucketNotification",
+        "s3:GetBucketLocation"
+      ],
+      "Resource": "arn:aws:s3:::taskcloud-attachments-<ACCOUNT_ID>-ap-south-1"
+    },
+    {
+      "Sid": "ListBucketNames",
+      "Effect": "Allow",
+      "Action": "s3:ListAllMyBuckets",
+      "Resource": "*"
+    }
+  ]
+}

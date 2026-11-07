@@ -46,7 +46,7 @@ Each is scoped to the person's stack ARN, `arn:aws:cloudformation:ap-south-1:<AC
 | User | File | Adds |
 |---|---|---|
 | `sanchit` | `iam/policies/user-sanchit.json` | Read-only Describe and List on the table metadata and Cognito pool |
-| `aatyush` | `iam/policies/user-aatyush.json` | `s3:PutObject`, `s3:GetObject`, `s3:ListBucket` on the artifact bucket; read-only Describe, List and Get on API Gateway, Lambda configuration and the attachments bucket's notification settings |
+| `aatyush` | `iam/policies/user-aatyush.json` | `s3:PutObject`, `s3:GetObject`, `s3:ListBucket` on the artifact bucket; read-only Describe, List and Get on API Gateway, Lambda configuration and the attachments bucket's notification settings; `s3:ListAllMyBuckets` so the S3 console opens (bucket names only, no objects) |
 | `krushna` | `iam/policies/user-krushna.json` | Amplify `CreateDeployment`, `StartDeployment`, `GetJob`, `ListJobs`, `GetApp`, `GetBranch` on `apps/*`, and `ListApps` (D-020) |
 
 No team member gets data access: no DynamoDB item reads or writes, no attachment objects, no Bedrock, no IAM and no billing.
@@ -75,7 +75,7 @@ Anyone who can pass the deploy role could use it, through their own stack, to cr
 
 ## Console steps for Aadesh
 
-Do these after `scripts/0_foundation.sh` has created `taskcloud-cfn-role` and the artifact bucket, signed in as `aadesh-admin`.
+Do these after `scripts/0_foundation.sh` has created `taskcloud-cfn-role` and the artifact bucket, signed in as `aadesh-admin`. That user is created beforehand from the root account, with MFA and the AWS managed policy `AdministratorAccess`, and is then the only admin used.
 
 1. In CloudShell, run `./scripts/render_iam.sh`. Then open each file in `iam/rendered/`, for example `cat iam/rendered/group-deployers.json`, to copy it.
 2. Open **IAM > Policies > Create policy > JSON**. Paste `iam/rendered/group-deployers.json`, name it `TaskCloud-Deployers`, and create it.

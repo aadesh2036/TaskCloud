@@ -1,0 +1,40 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DeployOwnStack",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:CreateStack",
+        "cloudformation:UpdateStack",
+        "cloudformation:CreateChangeSet",
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:ExecuteChangeSet",
+        "cloudformation:DeleteChangeSet",
+        "cloudformation:DescribeStacks",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:GetTemplateSummary"
+      ],
+      "Resource": "arn:aws:cloudformation:ap-south-1:<ACCOUNT_ID>:stack/taskcloud-frontend/*"
+    },
+    {
+      "Sid": "DeploySite",
+      "Effect": "Allow",
+      "Action": [
+        "amplify:CreateDeployment",
+        "amplify:StartDeployment",
+        "amplify:GetJob",
+        "amplify:ListJobs",
+        "amplify:GetApp",
+        "amplify:GetBranch"
+      ],
+      "Resource": "arn:aws:amplify:ap-south-1:<ACCOUNT_ID>:apps/*"
+    },
+    {
+      "Sid": "ListApps",
+      "Effect": "Allow",
+      "Action": "amplify:ListApps",
+      "Resource": "*"
+    }
+  ]
+}
