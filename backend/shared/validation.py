@@ -156,7 +156,7 @@ def parse_attachment_key(key: str) -> tuple[str, str] | None:
     parts = key.split("/")
     if len(parts) != 3 or not all(parts):
         return None
-    user_id, task_id, _filename = parts
-    if not _KEY_USER_RE.match(user_id) or not is_valid_task_id(task_id):
+    user_id, task_id, filename = parts
+    if not _KEY_USER_RE.match(user_id) or not is_valid_task_id(task_id) or filename in (".", ".."):
         return None
     return user_id, task_id

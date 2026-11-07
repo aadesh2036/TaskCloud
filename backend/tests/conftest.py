@@ -25,6 +25,8 @@ def isolated_env(monkeypatch, tmp_path):
         "TABLE_NAME": TABLE,
         "ATTACHMENTS_BUCKET": BUCKET,
         "TASKCLOUD_DATA_DIR": str(tmp_path / "data"),
+        # Importing local/server.py sets this to local for the whole process, so pin it per test.
+        "TASKCLOUD_STORE": "dynamodb",
     }.items():
         monkeypatch.setenv(name, value)
     monkeypatch.delenv("AWS_PROFILE", raising=False)

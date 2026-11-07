@@ -132,5 +132,5 @@ def test_sanitize_filename_requires_a_name():
 def test_parse_attachment_key():
     assert parse_attachment_key(f"user-1/{GOOD_ID}/a.pdf") == ("user-1", GOOD_ID)
     for bad in ("", "a", "a/b", f"user-1/{GOOD_ID}", f"user-1/{GOOD_ID}/", f"user/1/{GOOD_ID}/a.pdf",
-                "user-1/not-a-uuid/a.pdf", f"us er/{GOOD_ID}/a.pdf", f"/{GOOD_ID}/a.pdf"):
+                "user-1/not-a-uuid/a.pdf", f"user-1/{GOOD_ID}/..", f"us er/{GOOD_ID}/a.pdf", f"/{GOOD_ID}/a.pdf"):
         assert parse_attachment_key(bad) is None
