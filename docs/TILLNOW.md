@@ -1,10 +1,10 @@
 # TILLNOW
 
 ## Last updated
-2026-11-07 11:03 IST, by Claude Code session (M8)
+2026-11-07 11:03 IST, by Claude Code session (M9)
 
 ## Current state
-Everything passes local verification: tests, smoke test, browser flows, cfn-lint and shellcheck. Nothing has been deployed.
+The repository is complete and verified locally: app, tests, templates, scripts, IAM policies and docs. Nothing has been deployed to AWS. The templates, IAM permissions, real Cognito and real Bedrock can only be proven by the first real deploy.
 
 ## Milestones
 | ID | Milestone | Status | Notes |
@@ -18,15 +18,35 @@ Everything passes local verification: tests, smoke test, browser flows, cfn-lint
 | M6 | Deploy scripts | Done | bash -n and shellcheck clean; flow tested with a fake aws CLI |
 | M7 | IAM policy files and IAM_ACL.md | Done | Every script call checked against its owner's policy |
 | M8 | Full local verification and smoke test | Done | All checks pass on a fresh clone |
-| M9 | Final docs pass | Not started | |
+| M9 | Final docs pass | Done | Docs match the code; manual steps listed below |
 
 ## Next step
-Start M9: final docs pass.
+Aadesh: follow the pre-flight checks in `docs/DEPLOYMENT.md`, then run `bash scripts/0_foundation.sh <ALERT_EMAIL> 5` in CloudShell in ap-south-1.
 
 ## Open questions and blockers
-- None yet.
+- **Aadesh:** choose the budget alert email. It is passed to `scripts/0_foundation.sh` at deploy time and is not stored in the repo.
+- **Aadesh:** confirm that this account can pay for Claude through Marketplace. The model check in `scripts/0_foundation.sh` shows this. If it fails, switch to Nova (see `docs/DEPLOYMENT.md`).
+- **Aadesh:** the Git author email from local Git config is in every commit's metadata. Before pushing to a public repository, decide whether to use a GitHub no-reply address.
+- **Team:** expect the first deploy to find something, most likely a missing action on `taskcloud-cfn-role`. Do not fix it in the console. Send the log to Aadesh.
+
+**Manual steps left, in order. Each is owned by the person named:**
+1. Aadesh: complete the pre-flight checks in `docs/DEPLOYMENT.md`, then put the code in CloudShell.
+2. Aadesh: `bash scripts/0_foundation.sh <ALERT_EMAIL> 5`, then `bash scripts/render_iam.sh`, then create the group and users from `docs/IAM_ACL.md`.
+3. Sanchit: `bash scripts/1_data.sh`
+4. Aatyush: `bash scripts/2_api.sh`
+5. Aadesh: `bash scripts/3_agent.sh`
+6. Krushna: `bash scripts/4_frontend.sh`
+7. Aadesh: `bash scripts/create_demo_user.sh <DEMO_EMAIL>`, then run the end-to-end test.
+8. Everyone: collect the evidence in `docs/DEPLOYMENT.md`.
+9. After the final demo, Aadesh: `bash scripts/99_teardown.sh`, then delete the IAM users, group and policy.
 
 ## Change log
+### 2026-11-07 11:03 IST, M9
+- **Files:** `docs/TILLNOW.md`
+- **Tests:** pytest, ruff, cfn-lint, bash -n and shellcheck all clean on the final commit
+- **Decisions:** None
+- **Note:** during M0 setup, one `aws sts get-caller-identity` command was run on the developer's machine with its output discarded. It changes nothing, but it did make the CLI load any local credentials, which rule 1 forbids. No `aws` command was run after that. All later script tests use a generated fake.
+
 ### 2026-11-07 11:03 IST, M8
 - **Files:** `backend/functions/tasks_api/handler.py`, `backend/tests/*`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/DEPLOYMENT.md`, `docs/LOCAL_DEV.md`
 - **Tests:** pytest 467 passed; on a fresh clone 465 passed on Python 3.11, 3.13 and 3.14 before the final progress fix; cfn-lint, bash -n, shellcheck and ruff clean; npm ci and build passed; smoke test passed against the README commands; browser flows passed with no console errors
