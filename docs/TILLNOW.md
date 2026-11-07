@@ -1,10 +1,10 @@
 # TILLNOW
 
 ## Last updated
-2026-11-07 10:55 IST, by Claude Code session (M5)
+2026-11-07 10:58 IST, by Claude Code session (M6)
 
 ## Current state
-The local app is complete, and all five CloudFormation templates pass cfn-lint and the design checks. No template has been deployed, and deploy scripts are not written yet.
+The local app, templates and deploy scripts are complete. Script flow, order and failure handling are tested against a fake aws CLI, and nothing has been run against real AWS.
 
 ## Milestones
 | ID | Milestone | Status | Notes |
@@ -15,18 +15,23 @@ The local app is complete, and all five CloudFormation templates pass cfn-lint a
 | M3 | Local dev server | Done | Standard library only; verified on bare Python 3.11 |
 | M4 | React + Vite frontend | Done | Builds on Node 18 and 20; browser-tested |
 | M5 | CloudFormation templates | Done | cfn-lint clean; design checks in test_infra.py |
-| M6 | Deploy scripts | Not started | |
+| M6 | Deploy scripts | Done | bash -n and shellcheck clean; flow tested with a fake aws CLI |
 | M7 | IAM policy files and IAM_ACL.md | Not started | |
 | M8 | Full local verification and smoke test | Not started | |
 | M9 | Final docs pass | Not started | |
 
 ## Next step
-Start M6: write `scripts/lib/common.sh` and the deploy scripts.
+Start M7: write `iam/policies/*.json` and test them against what the scripts call.
 
 ## Open questions and blockers
 - None yet.
 
 ## Change log
+### 2026-11-07 10:58 IST, M6
+- **Files:** `scripts/*`, `backend/tests/test_scripts.py`, `docs/DEPLOYMENT.md`
+- **Tests:** pytest 352 passed; shellcheck clean; bash -n clean
+- **Decisions:** None
+
 ### 2026-11-07 10:55 IST, M5
 - **Files:** `infra/*.yaml`, `backend/tests/test_infra.py`, `docs/DECISIONS.md`
 - **Tests:** cfn-lint clean; pytest all passed

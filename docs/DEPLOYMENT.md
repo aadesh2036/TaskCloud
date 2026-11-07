@@ -117,7 +117,7 @@ aws lambda update-function-configuration --function-name taskcloud-planner-agent
   --description "model switched" --region ap-south-1
 ```
 
-Confirm the exact Nova profile ID with `aws bedrock list-inference-profiles --region ap-south-1` first. A later `scripts/3_agent.sh` run sets the parameter back to the template's value unless you pass the new one: `MODEL_ID=<NOVA_PROFILE_ID> bash scripts/3_agent.sh`.
+Confirm the exact Nova profile ID with `aws bedrock list-inference-profiles --region ap-south-1` first, because the ID above is only an example. A later `scripts/3_agent.sh` run reads the current parameter and keeps it, so it will not undo the switch.
 
 ## Troubleshooting
 
