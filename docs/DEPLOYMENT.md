@@ -107,7 +107,7 @@ Creates a confirmed user with the welcome message suppressed. It prompts for the
 Run this once the site and demo user exist. The simplest test is in the site itself:
 
 1. Log in with the demo user.
-2. In **Plan with AI**, enter "DBMS exam on Friday, finish my lab record, and revise two hours a day."
+2. Press Mochi, the round face in the corner, to open **Plan with AI**, and enter "DBMS exam on Friday, finish my lab record, and revise two hours a day."
 3. Check that new tasks appear on the dashboard with an AI badge, and in the DynamoDB table.
 4. Attach a file to a task, check that **Open** appears, and check the indexer's log group in CloudWatch.
 

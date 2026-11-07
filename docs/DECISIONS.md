@@ -192,3 +192,25 @@ Newest entries go at the bottom. D-001 to D-013 are the agreed seed decisions. L
 - **Alternatives:** No cap (unbounded read inside a 10-second Lambda).
 - **Files:** `backend/functions/tasks_api/handler.py`
 
+## D-028: The frontend is a kawaii stationery journal with a mascot
+- **Date:** 2026-11-07
+- **Decision:** Replace the ruled-notebook look with dotted journal paper, washi tape and sticker-style tasks in a pastel palette, and add the mascot Mochi. The fonts become Mochiy Pop One and M PLUS Rounded 1c, which replaces the font choice in D-026. Mochi says short random phrases, reacts to events, and opens the AI planner as a pop-up bubble.
+- **Reason:** Requested by the team. Putting the planner behind the mascot gives the mascot a job and keeps the page uncluttered. The planner stays mounted while closed, so a running plan is not lost. Only real events are announced to screen readers, because idle chatter would be noise. All motion is off under `prefers-reduced-motion`.
+- **Alternatives:** A separate AI button beside a purely decorative mascot (two corner widgets for one idea); an always-visible planner box (takes the top of the page).
+- **Files:** `frontend/src/styles.css`, `frontend/src/components/Mascot.jsx`, `frontend/src/components/MochiFace.jsx`, `frontend/src/components/PlannerBox.jsx`, `frontend/src/data/phrases.js`, `frontend/index.html`
+
+## D-029: Daily quotes are original and unattributed
+- **Date:** 2026-11-07
+- **Decision:** `frontend/src/data/quotes.js` holds 80 lines written for TaskCloud. A fixed seeded shuffle plus the IST date picks one, so it looks random, stays the same all day, and repeats only after all 80 have been used.
+- **Reason:** Famous quotes are often misattributed, and some are under copyright. A plain random pick per day could repeat on consecutive days.
+- **Alternatives:** A quotes API (a new service and a network dependency); famous quotes (attribution risk).
+- **Files:** `frontend/src/data/quotes.js`, `frontend/src/components/QuoteCard.jsx`, `backend/tests/test_frontend_content.py`
+
+## D-030: Calendar, filters and focus timer run entirely in the browser
+- **Date:** 2026-11-07
+- **Decision:** Add a month calendar with a day panel, filter chips and search, a today ring, confetti on completing a task, and a 25-minute focus timer with a 5-minute rest. None of them adds a route, field or service. The calendar places tasks by `dueDate`. The chosen view is kept in `localStorage`, wrapped so that a blocked browser store is harmless.
+- **Reason:** All of it can be worked out from `GET /tasks` and `GET /progress`, so the agreed API, data model and IAM stay as they are.
+- **Alternatives:** Saving focus sessions on the server (needs a new route and data).
+- **Limit:** The timer's state is lost if the page reloads, and the calendar only shows the tasks `GET /tasks` returns, which is up to 500.
+- **Files:** `frontend/src/components/CalendarView.jsx`, `frontend/src/components/FocusTimer.jsx`, `frontend/src/components/Dashboard.jsx`, `frontend/src/components/Confetti.jsx`, `frontend/src/components/AddTask.jsx`
+

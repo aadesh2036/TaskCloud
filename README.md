@@ -1,6 +1,6 @@
 # TaskCloud
 
-TaskCloud is a serverless student productivity app, built as the course project for DS3203A Cloud Computing at VIT Pune. Students manage daily tasks, track their progress and streaks, attach study files, and turn one typed prompt into a saved study plan using an AI agent.
+TaskCloud is a serverless student productivity app, built as the course project for DS3203A Cloud Computing at VIT Pune. Students manage daily tasks in a list or calendar, track their progress and streaks, attach study files, and turn one typed prompt into a saved study plan using an AI agent. The app looks like a kawaii stationery journal, with a daily note, a focus timer, and Mochi, a round mascot who opens the planner.
 
 ## Architecture summary
 

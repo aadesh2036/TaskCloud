@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import MochiFace from './MochiFace.jsx';
 
 const friendly = (error) => {
   if (error.name === 'NotAuthorizedException' || error.name === 'UserNotFoundException') {
@@ -41,6 +42,8 @@ export default function Login({ auth, onSignedIn }) {
   return (
     <main className="login">
       <div className="login-page">
+        <span className="tape tape-pink" aria-hidden="true" />
+        <span className="login-mochi"><MochiFace mood={error ? 'worried' : busy ? 'thinking' : 'happy'} /></span>
         <h1 className="brand">TaskCloud</h1>
         <p className="login-intro">Your study tasks, your streak, and a planner that turns one line into a schedule.</p>
         <form onSubmit={submit}>

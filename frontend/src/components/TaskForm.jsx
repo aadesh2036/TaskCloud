@@ -2,9 +2,9 @@ import { useId, useState } from 'react';
 import { todayIst } from '../dates.js';
 
 // Used both for adding a task and for editing one in place.
-export default function TaskForm({ initial, submitLabel, onSubmit, onCancel }) {
+export default function TaskForm({ initial, defaultDate, submitLabel, onSubmit, onCancel }) {
   const id = useId();
-  const blank = { title: '', dueDate: todayIst(), priority: 'medium', estMinutes: 30 };
+  const blank = { title: '', dueDate: defaultDate ?? todayIst(), priority: 'medium', estMinutes: 30 };
   const [fields, setFields] = useState(initial ?? blank);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');

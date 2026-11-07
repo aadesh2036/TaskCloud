@@ -1,10 +1,10 @@
 # TILLNOW
 
 ## Last updated
-2026-11-07 11:03 IST, by Claude Code session (M9)
+2026-11-07 11:47 IST, by Claude Code session (frontend redesign)
 
 ## Current state
-The repository is complete and verified locally: app, tests, templates, scripts, IAM policies and docs. Nothing has been deployed to AWS. The templates, IAM permissions, real Cognito and real Bedrock can only be proven by the first real deploy.
+The repository is complete and verified locally: app, tests, templates, scripts, IAM policies and docs. The frontend has been redesigned as a kawaii stationery journal, with a calendar, a daily quote and the mascot Mochi. Nothing has been deployed to AWS. The templates, IAM permissions, real Cognito and real Bedrock can only be proven by the first real deploy.
 
 ## Milestones
 | ID | Milestone | Status | Notes |
@@ -41,6 +41,11 @@ Aadesh: follow the pre-flight checks in `docs/DEPLOYMENT.md`, then run `bash scr
 9. After the final demo, Aadesh: `bash scripts/99_teardown.sh`, then delete the IAM users, group and policy.
 
 ## Change log
+### 2026-11-07 11:47 IST, frontend redesign (after M9)
+- **Files:** `frontend/src/*`, `frontend/index.html`, `backend/tests/test_frontend_content.py`, `README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/DEPLOYMENT.md`
+- **Tests:** pytest 469 passed; ruff clean; smoke test passed; npm ci and build on Node 18 and 20; 34 browser checks for the new features at desktop and phone width and with reduced motion; login flow against a mocked Cognito. Found and fixed: with reduced motion on, focus did not reach the AI prompt.
+- **Decisions:** D-028, D-029, D-030
+
 ### 2026-11-07 11:03 IST, M9
 - **Files:** `docs/TILLNOW.md`
 - **Tests:** pytest, ruff, cfn-lint, bash -n and shellcheck all clean on the final commit

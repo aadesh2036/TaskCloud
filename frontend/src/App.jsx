@@ -59,7 +59,7 @@ export default function App() {
     );
   }
   if (!config) {
-    return <main className="centered" aria-busy="true"><p role="status">Opening your notebook…</p></main>;
+    return <main className="centered" aria-busy="true"><p role="status">Opening your journal…</p></main>;
   }
   if (!signedIn) {
     return <Login auth={auth} onSignedIn={() => setSignedIn(true)} />;
