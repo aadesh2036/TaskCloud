@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { formatLongDay, formatMonth, monthGrid } from '../dates.js';
 import AddTask from './AddTask.jsx';
 import TaskItem from './TaskItem.jsx';
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MAX_CHIPS = 2;
+const SWIPE_PX = 50;
 
 export default function CalendarView({ tasks, today, shared, onAdd }) {
   const [year, setYear] = useState(Number(today.slice(0, 4)));
@@ -26,6 +27,21 @@ export default function CalendarView({ tasks, today, shared, onAdd }) {
     setDirection(step > 0 ? 'next' : 'prev');
     setYear(moved.getUTCFullYear());
     setMonth(moved.getUTCMonth());
+  }
+
+  // A swipe must be mostly sideways, so scrolling the page never changes the month.
+  const touchStart = useRef(null);
+  function onTouchStart(event) {
+    const touch = event.touches[0];
+    touchStart.current = { x: touch.clientX, y: touch.clientY };
+  }
+  function onTouchEnd(event) {
+    if (!touchStart.current) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - touchStart.current.x;
+    const dy = touch.clientY - touchStart.current.y;
+    touchStart.current = null;
+    if (Math.abs(dx) >= SWIPE_PX && Math.abs(dx) > Math.abs(dy) * 1.5) move(dx < 0 ? 1 : -1);
   }
 
   function goToday() {
@@ -50,7 +66,7 @@ export default function CalendarView({ tasks, today, shared, onAdd }) {
       <div className="calendar-weekdays" aria-hidden="true">
         {WEEKDAYS.map((day) => <span key={day}>{day}</span>)}
       </div>
-      <div key={monthPrefix} className={`calendar-grid slide-${direction}`}>
+      <div key={monthPrefix} className={`calendar-grid slide-${direction}`} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         {cells.map((date) => {
           const dayTasks = byDate.get(date) ?? [];
           const open = dayTasks.filter((t) => t.status === 'todo');
@@ -68,7 +84,7 @@ export default function CalendarView({ tasks, today, shared, onAdd }) {
           return (
             <button key={date} type="button" className={classes} aria-label={label} aria-pressed={date === selected} onClick={() => setSelected(date)}>
               <span className="day-number">{Number(date.slice(8))}</span>
-              {allDone && <span className="day-stamp" aria-hidden="true">♥</span>}
+              {allDone && <span className="day-stamp" aria-hidden="true">★</span>}
               <span className="day-chips" aria-hidden="true">
                 {dayTasks.slice(0, MAX_CHIPS).map((task) => (
                   <span key={task.taskId} className={`day-chip priority-${task.priority}${task.status === 'done' ? ' is-done' : ''}`}>{task.title}</span>

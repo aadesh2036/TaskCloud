@@ -4,7 +4,7 @@ import { formatLongDay } from '../dates.js';
 export default function QuoteCard({ today }) {
   return (
     <figure className="quote-card">
-      <span className="tape tape-pink" aria-hidden="true" />
+      <span className="tape tape-blue" aria-hidden="true" />
       <figcaption>Today's little note, {formatLongDay(today)}</figcaption>
       <blockquote>{quoteForDate(today)}</blockquote>
     </figure>

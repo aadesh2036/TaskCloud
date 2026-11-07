@@ -214,3 +214,10 @@ Newest entries go at the bottom. D-001 to D-013 are the agreed seed decisions. L
 - **Limit:** The timer's state is lost if the page reloads, and the calendar only shows the tasks `GET /tasks` returns, which is up to 500.
 - **Files:** `frontend/src/components/CalendarView.jsx`, `frontend/src/components/FocusTimer.jsx`, `frontend/src/components/Dashboard.jsx`, `frontend/src/components/Confetti.jsx`, `frontend/src/components/AddTask.jsx`
 
+## D-031: Blue theme and a phone-first layout with bottom tabs
+- **Date:** 2026-11-07
+- **Decision:** Replace the pink palette in D-028 with navy and sky blue, make Mochi blue, and use stars instead of hearts. When the layout is one column (62rem or narrower), a bottom tab bar switches between List, Calendar and Progress. On phones the AI bubble becomes a bottom sheet with a tap-to-close scrim, and the calendar changes month on a sideways swipe.
+- **Reason:** The team found the pink too girly and wanted a better phone experience. With one column, the progress panel was otherwise buried under the task list. Inactive tabs are hidden rather than unmounted, so the focus timer keeps running. Overdue stays red, because it is a warning rather than decoration. Touch controls are at least 40px tall, and hover effects are off on touch screens so nothing stays stuck after a tap.
+- **Alternatives:** A hamburger menu (hides navigation behind an extra tap); stacking everything on one long page (the previous layout).
+- **Files:** `frontend/src/styles.css`, `frontend/src/components/Dashboard.jsx`, `frontend/src/components/CalendarView.jsx`, `frontend/src/components/Confetti.jsx`, `frontend/index.html`
+

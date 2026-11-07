@@ -23,6 +23,11 @@ const FILTERS = [
   { id: 'file', label: 'With a file', test: (t) => Boolean(t.attachmentKey) },
 ];
 const VIEW_KEY = 'taskcloud-view';
+const NAV_ITEMS = [
+  { id: 'list', label: 'List', icon: <><circle cx="5" cy="7" r="1.5" /><circle cx="5" cy="12" r="1.5" /><circle cx="5" cy="17" r="1.5" /><path d="M10 7h10M10 12h10M10 17h10" /></> },
+  { id: 'calendar', label: 'Calendar', icon: <><rect x="3.5" y="5" width="17" height="15.5" rx="3" /><path d="M3.5 10h17M8 3v4M16 3v4" /></> },
+  { id: 'progress', label: 'Progress', icon: <path d="M5 20v-6M12 20V5M19 20v-9" /> },
+];
 
 function savedView() {
   try {
@@ -41,6 +46,7 @@ export default function Dashboard({ api, localMode, onSignOut }) {
   const [progressError, setProgressError] = useState('');
   const [newIds, setNewIds] = useState(new Set());
   const [view, setView] = useState(savedView);
+  const [tab, setTab] = useState('tasks');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [plannerOpen, setPlannerOpen] = useState(false);
@@ -161,6 +167,18 @@ export default function Dashboard({ api, localMode, onSignOut }) {
     }
   }
 
+  // Bottom tabs on one-column layouts. Wider layouts ignore tab and always show the sidebar.
+  function chooseTab(next) {
+    if (next === 'progress') {
+      setTab('progress');
+    } else {
+      setTab('tasks');
+      chooseView(next);
+    }
+    window.scrollTo(0, 0);
+  }
+  const activeTab = tab === 'progress' ? 'progress' : view;
+
   const shared = { newIds, api, onChanged: refresh, onUpload: uploadFile, onCompleted: celebrate };
 
   return (
@@ -172,7 +190,7 @@ export default function Dashboard({ api, localMode, onSignOut }) {
 
       <QuoteCard today={today} />
 
-      <div className="layout">
+      <div className={`layout tab-${tab}`}>
         <main className="journal">
           <div className="toolbar">
             <div className="view-switch" role="group" aria-label="Choose a view">
@@ -231,6 +249,13 @@ export default function Dashboard({ api, localMode, onSignOut }) {
         </div>
       </div>
 
+      <button
+        type="button"
+        className={`planner-scrim${plannerOpen ? ' is-open' : ''}`}
+        tabIndex={-1}
+        aria-hidden="true"
+        onClick={closePlanner}
+      />
       <PlannerBox api={api} open={plannerOpen} onClose={closePlanner} onBusyChange={setPlanning} onPlanned={onPlanned} />
       <Mascot
         ref={mascotButton}
@@ -241,6 +266,14 @@ export default function Dashboard({ api, localMode, onSignOut }) {
         dueToday={dueToday}
         onToggle={() => setPlannerOpen((value) => !value)}
       />
+      <nav className="bottom-nav" aria-label="Main">
+        {NAV_ITEMS.map((item) => (
+          <button key={item.id} type="button" aria-current={activeTab === item.id ? 'page' : undefined} onClick={() => chooseTab(item.id)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">{item.icon}</svg>
+            {item.label}
+          </button>
+        ))}
+      </nav>
       <Confetti bursts={bursts} />
     </div>
   );

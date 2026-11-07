@@ -1,6 +1,6 @@
 import TaskItem from './TaskItem.jsx';
 
-const WASHI = { Today: 'washi-pink', Upcoming: 'washi-lilac', Done: 'washi-mint' };
+const WASHI = { Today: 'washi-blue', Upcoming: 'washi-peri', Done: 'washi-mint' };
 
 export default function TaskSection({ title, tasks, emptyText, shared }) {
   const headingId = `section-${title.toLowerCase()}`;

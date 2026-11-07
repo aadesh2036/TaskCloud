@@ -1,10 +1,10 @@
 # TILLNOW
 
 ## Last updated
-2026-11-07 11:47 IST, by Claude Code session (frontend redesign)
+2026-11-07 12:10 IST, by Claude Code session (blue theme and mobile)
 
 ## Current state
-The repository is complete and verified locally: app, tests, templates, scripts, IAM policies and docs. The frontend has been redesigned as a kawaii stationery journal, with a calendar, a daily quote and the mascot Mochi. Nothing has been deployed to AWS. The templates, IAM permissions, real Cognito and real Bedrock can only be proven by the first real deploy.
+The repository is complete and verified locally: app, tests, templates, scripts, IAM policies and docs. The frontend is a blue kawaii stationery journal with a calendar, a daily quote and the mascot Mochi, and it has a phone layout with bottom tabs. Nothing has been deployed to AWS. The templates, IAM permissions, real Cognito and real Bedrock can only be proven by the first real deploy.
 
 ## Milestones
 | ID | Milestone | Status | Notes |
@@ -41,6 +41,12 @@ Aadesh: follow the pre-flight checks in `docs/DEPLOYMENT.md`, then run `bash scr
 9. After the final demo, Aadesh: `bash scripts/99_teardown.sh`, then delete the IAM users, group and policy.
 
 ## Change log
+### 2026-11-07 12:10 IST, blue theme and mobile layout (after M9)
+- **Files:** `frontend/src/styles.css`, `frontend/src/components/Dashboard.jsx`, `frontend/src/components/CalendarView.jsx`, `frontend/src/components/Confetti.jsx`, `frontend/index.html`, `backend/tests/test_frontend_content.py`, `README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`
+- **Tests:** pytest 471 passed; ruff clean; smoke test passed; npm ci and build on Node 18 and 20; 96 touch-emulated checks at 320, 360, 390 and 768 wide and phone landscape, plus desktop; 34 desktop regression checks. No real phone was tested.
+- **Decisions:** D-031
+- **Note:** during this work a browser test ran against the developer's own local server on port 8787 by mistake, and deleted the tasks in their git-ignored `local/.data`. Those tasks could not be recovered. The test's own 26 tasks were then removed, and all later tests used private ports and scratch data. AWS and git were not affected.
+
 ### 2026-11-07 11:47 IST, frontend redesign (after M9)
 - **Files:** `frontend/src/*`, `frontend/index.html`, `backend/tests/test_frontend_content.py`, `README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/DEPLOYMENT.md`
 - **Tests:** pytest 469 passed; ruff clean; smoke test passed; npm ci and build on Node 18 and 20; 34 browser checks for the new features at desktop and phone width and with reduced motion; login flow against a mocked Cognito. Found and fixed: with reduced motion on, focus did not reach the AI prompt.

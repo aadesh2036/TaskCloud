@@ -71,7 +71,7 @@ Deploy in order 0 to 4. Delete in reverse. Exports are named `<stack>-<Output>`.
 
 ## Services
 
-- **Frontend:** static React + Vite single-page app on Amplify Hosting, deployed manually without a Git connection (D-008). The list and calendar views, daily quote, mascot, focus timer and filters run entirely in the browser, using the routes below (D-028 to D-030).
+- **Frontend:** static React + Vite single-page app on Amplify Hosting, deployed manually without a Git connection (D-008). The list and calendar views, daily quote, mascot, focus timer and filters run entirely in the browser, using the routes below (D-028 to D-031).
 - **Auth:** Cognito user pool with `AllowAdminCreateUserOnly: true`. The username is the email. The app client has no secret and allows SRP and refresh-token auth. The frontend uses aws-amplify v6 and handles the "new password required" step.
 - **API:** HTTP API with a JWT authorizer on every route. Issuer `https://cognito-idp.<region>.amazonaws.com/<userPoolId>`, audience the app client ID. CORS allows all origins (D-007), the `authorization` and `content-type` headers, and GET, POST, PATCH, DELETE and OPTIONS. There are no OPTIONS routes. `$default` stage with auto-deploy and a default throttle of burst 10, rate 5. Integration timeout 29000 ms.
 - **Lambda:** python3.13, fixed names `taskcloud-tasks-api`, `taskcloud-attachment-indexer`, `taskcloud-planner-agent`.

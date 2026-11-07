@@ -1,5 +1,5 @@
-const SHAPES = ['★', '♥', '✿', '●'];
-const COLOURS = ['#f7a8c4', '#cdb8f2', '#8fdcc0', '#ffe27a', '#9fd6f5'];
+const SHAPES = ['★', '✦', '●', '★'];
+const COLOURS = ['#2f74d0', '#8fc1f2', '#6fd3c0', '#ffd24d', '#7f92ec'];
 const PIECES = 12;
 
 export function makeBurst(x, y) {

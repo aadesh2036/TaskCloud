@@ -71,7 +71,7 @@ function WeekChart({ days }) {
 export default function ProgressPanel({ progress, error, dueToday }) {
   const shell = (children, busy) => (
     <aside className="panel progress" aria-label="Progress" aria-busy={busy || undefined}>
-      <span className="tape tape-lilac" aria-hidden="true" />
+      <span className="tape tape-peri" aria-hidden="true" />
       <h2 className="panel-heading">Progress</h2>
       {children}
     </aside>
