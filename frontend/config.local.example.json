@@ -1,0 +1,7 @@
+{
+  "mode": "local",
+  "region": "ap-south-1",
+  "apiUrl": "http://localhost:8787",
+  "userPoolId": "",
+  "userPoolClientId": ""
+}

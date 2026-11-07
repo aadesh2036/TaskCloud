@@ -1,0 +1,22 @@
+{
+  "name": "taskcloud-frontend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "predev": "node scripts/ensure-config.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "aws-amplify": "6.22.2",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.7.0",
+    "vite": "5.4.21"
+  }
+}

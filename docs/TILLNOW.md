@@ -1,10 +1,10 @@
 # TILLNOW
 
 ## Last updated
-2026-11-07 10:41 IST, by Claude Code session (M3)
+2026-11-07 10:49 IST, by Claude Code session (M4)
 
 ## Current state
-The whole backend runs locally through `local/server.py` with a stub model, and `local/smoke_test.py` passes against it. There is no UI yet.
+The full app runs locally: dashboard, attachments, progress and stub planner. The Amplify login path was exercised in a browser against a mocked Cognito endpoint. Templates and scripts are not written yet.
 
 ## Milestones
 | ID | Milestone | Status | Notes |
@@ -13,7 +13,7 @@ The whole backend runs locally through `local/server.py` with a stub model, and 
 | M1 | Backend: shared code, tasks-api, attachment-indexer, tests | Done | 135 tests, both store backends |
 | M2 | Planner agent with fake Bedrock client | Done | Fake Bedrock client; injection tests included |
 | M3 | Local dev server | Done | Standard library only; verified on bare Python 3.11 |
-| M4 | React + Vite frontend | Not started | |
+| M4 | React + Vite frontend | Done | Builds on Node 18 and 20; browser-tested |
 | M5 | CloudFormation templates | Not started | |
 | M6 | Deploy scripts | Not started | |
 | M7 | IAM policy files and IAM_ACL.md | Not started | |
@@ -21,12 +21,17 @@ The whole backend runs locally through `local/server.py` with a stub model, and 
 | M9 | Final docs pass | Not started | |
 
 ## Next step
-Start M4: build the React + Vite app in `frontend/`.
+Start M5: write the five templates in `infra/` and make them pass cfn-lint.
 
 ## Open questions and blockers
 - None yet.
 
 ## Change log
+### 2026-11-07 10:49 IST, M4
+- **Files:** `frontend/*`
+- **Tests:** npm ci and build on Node 18.20 and 20.20 and 24; headless Chromium flow for add, complete, plan, attach, open, oversize, edit, delete, mobile (no overflow, no console errors); real aws-amplify against a mocked Cognito for login, wrong password, new password, reload, 401 sign-out
+- **Decisions:** None
+
 ### 2026-11-07 10:41 IST, M3
 - **Files:** `local/server.py`, `local/stub_bedrock.py`, `local/smoke_test.py`, `backend/tests/test_local_server.py`
 - **Tests:** pytest 240 passed on Python 3.11, 3.13 and 3.14; smoke test passed on bare 3.11 without boto3; ruff clean
