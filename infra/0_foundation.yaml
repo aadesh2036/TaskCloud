@@ -1,0 +1,341 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  TaskCloud stack 0 (owner Aadesh). Deploy role, artifact bucket, audit trail and budget.
+  Deployed by an admin without a deploy role, because it creates that role.
+
+Parameters:
+  AlertEmail:
+    Type: String
+    Description: Email address for budget alerts.
+    AllowedPattern: '^[^@\s]+@[^@\s]+\.[^@\s]+$'
+    ConstraintDescription: must be an email address.
+  BudgetLimit:
+    Type: Number
+    Description: Monthly budget limit in US dollars.
+    Default: 5
+    MinValue: 1
+
+Resources:
+  # CloudFormation assumes this role to create the later stacks, so team members never
+  # need permissions on the underlying services themselves.
+  CfnRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: taskcloud-cfn-role
+      Description: Used by CloudFormation to deploy TaskCloud stacks 1 to 4.
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: taskcloud-deploy-named-resources
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: DynamoDbTables
+                Effect: Allow
+                Action:
+                  - dynamodb:CreateTable
+                  - dynamodb:DeleteTable
+                  - dynamodb:DescribeTable
+                  - dynamodb:UpdateTable
+                  - dynamodb:DescribeContinuousBackups
+                  - dynamodb:UpdateContinuousBackups
+                  - dynamodb:DescribeTimeToLive
+                  - dynamodb:UpdateTimeToLive
+                  - dynamodb:DescribeContributorInsights
+                  - dynamodb:DescribeKinesisStreamingDestination
+                  - dynamodb:GetResourcePolicy
+                  - dynamodb:ListTagsOfResource
+                  - dynamodb:TagResource
+                  - dynamodb:UntagResource
+                Resource: !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/taskcloud-*'
+              - Sid: LambdaFunctions
+                Effect: Allow
+                Action:
+                  - lambda:CreateFunction
+                  - lambda:DeleteFunction
+                  - lambda:UpdateFunctionCode
+                  - lambda:UpdateFunctionConfiguration
+                  - lambda:AddPermission
+                  - lambda:RemovePermission
+                  - lambda:PublishVersion
+                  - lambda:TagResource
+                  - lambda:UntagResource
+                  - lambda:Get*
+                  - lambda:List*
+                Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:taskcloud-*'
+              - Sid: LambdaLogGroups
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:DeleteLogGroup
+                  - logs:PutRetentionPolicy
+                  - logs:DeleteRetentionPolicy
+                  - logs:TagResource
+                  - logs:UntagResource
+                  - logs:TagLogGroup
+                  - logs:UntagLogGroup
+                  - logs:ListTagsForResource
+                  - logs:ListTagsLogGroup
+                Resource:
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/taskcloud-*'
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/taskcloud-*:*'
+              - Sid: DescribeLogGroups
+                Effect: Allow
+                Action: logs:DescribeLogGroups
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+              - Sid: ServiceRoles
+                Effect: Allow
+                Action:
+                  - iam:CreateRole
+                  - iam:DeleteRole
+                  - iam:GetRole
+                  - iam:UpdateRole
+                  - iam:UpdateAssumeRolePolicy
+                  - iam:PutRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:GetRolePolicy
+                  - iam:ListRolePolicies
+                  - iam:ListAttachedRolePolicies
+                  - iam:TagRole
+                  - iam:UntagRole
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/taskcloud-*'
+              - Sid: PassServiceRolesToLambdaOnly
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/taskcloud-*-role'
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: lambda.amazonaws.com
+              # Without this, the role could rewrite its own policy, since its name
+              # also matches the taskcloud-* pattern above.
+              - Sid: NeverChangeThisRole
+                Effect: Deny
+                Action: iam:*
+                Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:role/taskcloud-cfn-role'
+              - Sid: AttachmentBuckets
+                Effect: Allow
+                Action:
+                  - s3:CreateBucket
+                  - s3:DeleteBucket
+                  - s3:ListBucket
+                  - s3:GetBucket*
+                  - s3:PutBucket*
+                  - s3:DeleteBucketPolicy
+                  - s3:GetEncryptionConfiguration
+                  - s3:PutEncryptionConfiguration
+                  - s3:GetLifecycleConfiguration
+                  - s3:PutLifecycleConfiguration
+                  - s3:GetAccelerateConfiguration
+                  - s3:GetAnalyticsConfiguration
+                  - s3:GetInventoryConfiguration
+                  - s3:GetMetricsConfiguration
+                  - s3:GetReplicationConfiguration
+                Resource: !Sub 'arn:aws:s3:::taskcloud-attachments-${AWS::AccountId}-${AWS::Region}'
+              # Lambda fetches the code zip with the permissions of whoever creates the
+              # function, which here is this role.
+              - Sid: ReadLambdaCodeZips
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                Resource: !Sub 'arn:aws:s3:::taskcloud-artifacts-${AWS::AccountId}-${AWS::Region}/*'
+              - Sid: ModelParameter
+                Effect: Allow
+                Action:
+                  - ssm:PutParameter
+                  - ssm:DeleteParameter
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:AddTagsToResource
+                  - ssm:RemoveTagsFromResource
+                  - ssm:ListTagsForResource
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/taskcloud/*'
+        # D-019: these services assign generated IDs, so names cannot be scoped by the
+        # taskcloud- prefix. Scoped to the service and region instead.
+        - PolicyName: taskcloud-deploy-generated-id-resources
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: DescribeParameters
+                Effect: Allow
+                Action: ssm:DescribeParameters
+                Resource: '*'
+              - Sid: CreateCognitoPool
+                Effect: Allow
+                Action: cognito-idp:CreateUserPool
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: !Ref AWS::Region
+              - Sid: ManageCognitoPools
+                Effect: Allow
+                Action:
+                  - cognito-idp:DeleteUserPool
+                  - cognito-idp:DescribeUserPool
+                  - cognito-idp:UpdateUserPool
+                  - cognito-idp:CreateUserPoolClient
+                  - cognito-idp:DeleteUserPoolClient
+                  - cognito-idp:DescribeUserPoolClient
+                  - cognito-idp:UpdateUserPoolClient
+                  - cognito-idp:GetUserPoolMfaConfig
+                  - cognito-idp:SetUserPoolMfaConfig
+                  - cognito-idp:ListTagsForResource
+                  - cognito-idp:TagResource
+                  - cognito-idp:UntagResource
+                Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*'
+              - Sid: HttpApis
+                Effect: Allow
+                Action:
+                  - apigateway:GET
+                  - apigateway:POST
+                  - apigateway:PUT
+                  - apigateway:PATCH
+                  - apigateway:DELETE
+                Resource:
+                  - !Sub 'arn:aws:apigateway:${AWS::Region}::/apis'
+                  - !Sub 'arn:aws:apigateway:${AWS::Region}::/apis/*'
+                  - !Sub 'arn:aws:apigateway:${AWS::Region}::/tags/*'
+              - Sid: CreateAmplifyApp
+                Effect: Allow
+                Action:
+                  - amplify:CreateApp
+                  - amplify:ListApps
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: !Ref AWS::Region
+              - Sid: ManageAmplifyApps
+                Effect: Allow
+                Action:
+                  - amplify:GetApp
+                  - amplify:UpdateApp
+                  - amplify:DeleteApp
+                  - amplify:CreateBranch
+                  - amplify:GetBranch
+                  - amplify:UpdateBranch
+                  - amplify:DeleteBranch
+                  - amplify:ListBranches
+                  - amplify:ListTagsForResource
+                  - amplify:TagResource
+                  - amplify:UntagResource
+                Resource: !Sub 'arn:aws:amplify:${AWS::Region}:${AWS::AccountId}:apps/*'
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BucketName: !Sub 'taskcloud-artifacts-${AWS::AccountId}-${AWS::Region}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  TrailBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BucketName: !Sub 'taskcloud-trail-${AWS::AccountId}-${AWS::Region}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      # Audit logs are only needed for the length of a course, and storage is what costs money.
+      LifecycleConfiguration:
+        Rules:
+          - Id: taskcloud-expire-trail-logs
+            Status: Enabled
+            ExpirationInDays: 90
+
+  TrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TrailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: CloudTrailCheckAcl
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt TrailBucket.Arn
+            Condition:
+              StringEquals:
+                aws:SourceArn: !Sub 'arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/taskcloud-trail'
+          - Sid: CloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub '${TrailBucket.Arn}/AWSLogs/${AWS::AccountId}/*'
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+                aws:SourceArn: !Sub 'arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/taskcloud-trail'
+
+  Trail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn: TrailBucketPolicy
+    Properties:
+      TrailName: taskcloud-trail
+      S3BucketName: !Ref TrailBucket
+      IsLogging: true
+      # All regions, so activity anywhere in the account is on record, not just in Mumbai.
+      IsMultiRegionTrail: true
+      IncludeGlobalServiceEvents: true
+      EnableLogFileValidation: true
+
+  Budget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: taskcloud-budget
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: !Ref BudgetLimit
+          Unit: USD
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: !Ref AlertEmail
+
+Outputs:
+  CfnRoleArn:
+    Description: Deploy role that later stacks pass to CloudFormation.
+    Value: !GetAtt CfnRole.Arn
+    Export:
+      Name: taskcloud-foundation-CfnRoleArn
+  ArtifactBucket:
+    Description: Bucket for packaged Lambda code.
+    Value: !Ref ArtifactBucket
+    Export:
+      Name: taskcloud-foundation-ArtifactBucket

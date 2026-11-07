@@ -1,0 +1,39 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  TaskCloud stack 4 (owner Krushna). Amplify app and branch. The site itself is uploaded
+  by scripts/4_frontend.sh (D-008).
+
+Resources:
+  AmplifyApp:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: taskcloud-frontend
+      Platform: WEB
+      CustomRules:
+        # Send page routes to the single-page app, but leave real files alone. This is
+        # the pattern from the Amplify docs, and it must leave config.json alone too.
+        - Source: </^[^.]+$|\.(?!(css|gif|ico|jpg|js|json|png|txt|svg|woff|woff2|ttf|map)$)([^.]+$)/>
+          Target: /index.html
+          Status: '200'
+
+  MainBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt AmplifyApp.AppId
+      BranchName: main
+      Stage: PRODUCTION
+      EnableAutoBuild: false
+
+Outputs:
+  AmplifyAppId:
+    Value: !GetAtt AmplifyApp.AppId
+    Export:
+      Name: taskcloud-frontend-AmplifyAppId
+  AmplifyDefaultDomain:
+    Value: !GetAtt AmplifyApp.DefaultDomain
+    Export:
+      Name: taskcloud-frontend-AmplifyDefaultDomain
+  SiteUrl:
+    Value: !Sub 'https://${MainBranch.BranchName}.${AmplifyApp.DefaultDomain}'
+    Export:
+      Name: taskcloud-frontend-SiteUrl

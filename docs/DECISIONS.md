@@ -128,3 +128,31 @@ Newest entries go at the bottom. D-001 to D-013 are the agreed seed decisions. L
 - **Reason:** A long task list becomes model input on every later call, which would spend the budget without improving the plan.
 - **Alternatives:** Returning all 500 (costly); no cap (unbounded input tokens).
 - **Files:** `backend/functions/planner_agent/handler.py`
+
+## D-019: The deploy role cannot scope every action by name
+- **Date:** 2026-11-07
+- **Decision:** `taskcloud-cfn-role` is scoped by the `taskcloud-` prefix wherever a service allows it. Lambda log groups use `/aws/lambda/taskcloud-*`. Cognito user pools, HTTP APIs and Amplify apps are scoped by service and region only. The role has an explicit Deny on changing itself.
+- **Reason:** Those three services give resources generated IDs, so their ARNs have no name to match. Lambda writes to `/aws/lambda/<function>` by default, so that path is the natural log group name. The Deny is needed because the role's own name matches the `taskcloud-*` pattern it manages.
+- **Alternatives:** Custom log group names (more configuration for no benefit); `*` on all actions (far too broad).
+- **Files:** `infra/0_foundation.yaml`, `docs/IAM_ACL.md`
+
+## D-020: amplify:ListApps is granted on all resources
+- **Date:** 2026-11-07
+- **Decision:** Krushna's `ListApps` permission is a separate statement on `*`, while the other Amplify actions are on `apps/*` as agreed.
+- **Reason:** `ListApps` is not an action on a specific app, so `apps/*` may not match it. It exposes only app metadata in this account, and the Amplify console needs it.
+- **Alternatives:** Leaving it on `apps/*` (the console list could fail).
+- **Files:** `iam/policies/user-krushna.json`, `docs/IAM_ACL.md`
+
+## D-021: Lambda Code paths suppress one cfn-lint warning
+- **Date:** 2026-11-07
+- **Decision:** Each `AWS::Lambda::Function` suppresses cfn-lint W3002 through resource metadata.
+- **Reason:** W3002 warns that a local `Code` path only works with `aws cloudformation package`. That is the agreed way to package, so the warning is expected. Suppressing it per resource keeps every other check active.
+- **Alternatives:** Ignoring W3002 across the project (could hide a real mistake elsewhere); S3 parameters instead of a path (the brief specifies the path).
+- **Files:** `infra/2_api.yaml`, `infra/3_agent.yaml`
+
+## D-022: Audit trail covers all regions and expires logs after 90 days
+- **Date:** 2026-11-07
+- **Decision:** `taskcloud-trail` is multi-region, and its bucket expires objects after 90 days.
+- **Reason:** A deploy role or stolen session could act in any region, so a Mumbai-only trail would miss it. The first copy of management events is free, so only storage costs money, and 90 days covers the course.
+- **Alternatives:** A single-region trail (blind to other regions and to global service events).
+- **Files:** `infra/0_foundation.yaml`

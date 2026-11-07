@@ -1,0 +1,332 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  TaskCloud stack 2 (owner Aatyush). HTTP API, tasks-api and attachment-indexer Lambdas,
+  attachments bucket. Re-run scripts/3_agent.sh after updating this stack, because an
+  update can reset the /plan route throttle.
+
+Resources:
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: taskcloud-http-api
+      ProtocolType: HTTP
+      # D-007: all origins, because the Amplify URL does not exist yet, and the app uses
+      # bearer tokens rather than cookies. API Gateway answers preflight requests itself,
+      # so there are no OPTIONS routes.
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowHeaders:
+          - authorization
+          - content-type
+        AllowMethods:
+          - GET
+          - POST
+          - PATCH
+          - DELETE
+          - OPTIONS
+        MaxAge: 3600
+
+  JwtAuthorizer:
+    Type: AWS::ApiGatewayV2::Authorizer
+    Properties:
+      ApiId: !Ref HttpApi
+      Name: taskcloud-jwt-authorizer
+      AuthorizerType: JWT
+      IdentitySource:
+        - $request.header.Authorization
+      JwtConfiguration:
+        Issuer: !Sub
+          - 'https://cognito-idp.${AWS::Region}.amazonaws.com/${PoolId}'
+          - PoolId: !ImportValue taskcloud-data-UserPoolId
+        Audience:
+          - !ImportValue taskcloud-data-UserPoolClientId
+
+  DefaultStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: $default
+      AutoDeploy: true
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 10
+        ThrottlingRateLimit: 5
+
+  TasksIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt TasksApiFunction.Arn
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: 29000
+
+  ListTasksRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: GET /tasks
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub 'integrations/${TasksIntegration}'
+
+  CreateTaskRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: POST /tasks
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub 'integrations/${TasksIntegration}'
+
+  UpdateTaskRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: PATCH /tasks/{id}
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub 'integrations/${TasksIntegration}'
+
+  DeleteTaskRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: DELETE /tasks/{id}
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub 'integrations/${TasksIntegration}'
+
+  GetProgressRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: GET /progress
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub 'integrations/${TasksIntegration}'
+
+  CreateUploadUrlRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: POST /tasks/{id}/attachment-url
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub 'integrations/${TasksIntegration}'
+
+  CreateDownloadUrlRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: GET /tasks/{id}/attachment-url
+      AuthorizationType: JWT
+      AuthorizerId: !Ref JwtAuthorizer
+      Target: !Sub 'integrations/${TasksIntegration}'
+
+  TasksApiInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref TasksApiFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*'
+
+  # --- tasks-api ---
+
+  TasksApiLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: /aws/lambda/taskcloud-tasks-api
+      RetentionInDays: 7
+
+  TasksApiRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: taskcloud-tasks-api-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: taskcloud-tasks-api-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: TaskItems
+                Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                Resource: !ImportValue taskcloud-data-TableArn
+              # A pre-signed URL carries the permissions of the role that signed it, so
+              # this role needs PutObject and GetObject even though the browser does the transfer.
+              - Sid: AttachmentObjects
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:DeleteObject
+                Resource: !Sub 'arn:aws:s3:::taskcloud-attachments-${AWS::AccountId}-${AWS::Region}/*'
+              - Sid: WriteLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt TasksApiLogGroup.Arn
+
+  TasksApiFunction:
+    Type: AWS::Lambda::Function
+    # The log group must come first, or Lambda could create one with no retention limit.
+    DependsOn: TasksApiLogGroup
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W3002  # D-021: a local path is what `aws cloudformation package` replaces.
+    Properties:
+      FunctionName: taskcloud-tasks-api
+      Runtime: python3.13
+      Handler: handler.lambda_handler
+      Role: !GetAtt TasksApiRole.Arn
+      Code: ../.build/tasks_api
+      MemorySize: 256
+      Timeout: 10
+      Environment:
+        Variables:
+          TASKCLOUD_STORE: dynamodb
+          TABLE_NAME: !ImportValue taskcloud-data-TableName
+          ATTACHMENTS_BUCKET: !Sub 'taskcloud-attachments-${AWS::AccountId}-${AWS::Region}'
+
+  # --- attachment-indexer ---
+
+  IndexerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: /aws/lambda/taskcloud-attachment-indexer
+      RetentionInDays: 7
+
+  IndexerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: taskcloud-indexer-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: taskcloud-indexer-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: SetAttachmentKey
+                Effect: Allow
+                Action: dynamodb:UpdateItem
+                Resource: !ImportValue taskcloud-data-TableArn
+              - Sid: WriteLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt IndexerLogGroup.Arn
+
+  IndexerFunction:
+    Type: AWS::Lambda::Function
+    DependsOn: IndexerLogGroup
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W3002  # D-021
+    Properties:
+      FunctionName: taskcloud-attachment-indexer
+      Runtime: python3.13
+      Handler: handler.lambda_handler
+      Role: !GetAtt IndexerRole.Arn
+      Code: ../.build/attachment_indexer
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          TASKCLOUD_STORE: dynamodb
+          TABLE_NAME: !ImportValue taskcloud-data-TableName
+
+  # The bucket and Lambda reference each other, which would be a circular dependency.
+  # It is broken by building the bucket name with !Sub here, instead of !Ref or !GetAtt.
+  IndexerS3Permission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref IndexerFunction
+      Action: lambda:InvokeFunction
+      Principal: s3.amazonaws.com
+      SourceAccount: !Ref AWS::AccountId
+      SourceArn: !Sub 'arn:aws:s3:::taskcloud-attachments-${AWS::AccountId}-${AWS::Region}'
+
+  # --- attachments ---
+
+  AttachmentsBucket:
+    Type: AWS::S3::Bucket
+    # S3 tests the notification target when it is set, so the permission must exist first.
+    DependsOn: IndexerS3Permission
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BucketName: !Sub 'taskcloud-attachments-${AWS::AccountId}-${AWS::Region}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      # D-005: ACLs are disabled. Access is controlled by IAM and pre-signed URLs only.
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - '*'
+            AllowedMethods:
+              - POST
+              - GET
+            AllowedHeaders:
+              - '*'
+            MaxAge: 3000
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt IndexerFunction.Arn
+
+Outputs:
+  ApiId:
+    Value: !Ref HttpApi
+    Export:
+      Name: taskcloud-api-ApiId
+  ApiEndpoint:
+    Value: !GetAtt HttpApi.ApiEndpoint
+    Export:
+      Name: taskcloud-api-ApiEndpoint
+  AuthorizerId:
+    Value: !Ref JwtAuthorizer
+    Export:
+      Name: taskcloud-api-AuthorizerId
+  AttachmentsBucket:
+    Value: !Ref AttachmentsBucket
+    Export:
+      Name: taskcloud-api-AttachmentsBucket

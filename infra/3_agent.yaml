@@ -1,0 +1,127 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  TaskCloud stack 3 (owner Aadesh). Planner agent Lambda, POST /plan route and the model
+  parameter. The /plan throttle is applied by scripts/3_agent.sh (D-009).
+
+Parameters:
+  ModelId:
+    Type: String
+    Description: Bedrock model or inference profile ID.
+    Default: in.anthropic.claude-haiku-4-5-20251001-v1:0
+
+Resources:
+  # D-006: switching models only means changing this value.
+  ModelIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /taskcloud/modelId
+      Type: String
+      Value: !Ref ModelId
+      Description: Bedrock model or inference profile used by the planner agent.
+
+  PlannerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: /aws/lambda/taskcloud-planner-agent
+      RetentionInDays: 7
+
+  PlannerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: taskcloud-planner-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: taskcloud-planner-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # D-013: any profile or model, so the switch needs no IAM change. The region
+              # is a wildcard because inference profiles route between regions.
+              - Sid: InvokeModels
+                Effect: Allow
+                Action: bedrock:InvokeModel
+                Resource:
+                  - !Sub 'arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/*'
+                  - arn:aws:bedrock:*::foundation-model/*
+              - Sid: ReadModelParameter
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/taskcloud/modelId'
+              - Sid: TaskItems
+                Effect: Allow
+                Action:
+                  - dynamodb:Query
+                  - dynamodb:PutItem
+                  - dynamodb:BatchWriteItem
+                Resource: !ImportValue taskcloud-data-TableArn
+              - Sid: WriteLogs
+                Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt PlannerLogGroup.Arn
+
+  PlannerFunction:
+    Type: AWS::Lambda::Function
+    DependsOn: PlannerLogGroup
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W3002  # D-021: a local path is what `aws cloudformation package` replaces.
+    Properties:
+      FunctionName: taskcloud-planner-agent
+      Runtime: python3.13
+      Handler: handler.lambda_handler
+      Role: !GetAtt PlannerRole.Arn
+      Code: ../.build/planner_agent
+      # 28 s stays inside the 29 s API integration timeout, so the Lambda can answer first.
+      Timeout: 28
+      MemorySize: 512
+      Environment:
+        Variables:
+          TASKCLOUD_STORE: dynamodb
+          TABLE_NAME: !ImportValue taskcloud-data-TableName
+          MODEL_PARAM: !Ref ModelIdParameter
+
+  PlanIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !ImportValue taskcloud-api-ApiId
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt PlannerFunction.Arn
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: 29000
+
+  PlanRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !ImportValue taskcloud-api-ApiId
+      RouteKey: POST /plan
+      AuthorizationType: JWT
+      AuthorizerId: !ImportValue taskcloud-api-AuthorizerId
+      Target: !Sub 'integrations/${PlanIntegration}'
+
+  PlannerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PlannerFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub
+        - 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiId}/*/POST/plan'
+        - ApiId: !ImportValue taskcloud-api-ApiId
+
+Outputs:
+  PlannerFunctionArn:
+    Value: !GetAtt PlannerFunction.Arn
+    Export:
+      Name: taskcloud-agent-PlannerFunctionArn

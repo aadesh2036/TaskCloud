@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: TaskCloud stack 1 (owner Sanchit). DynamoDB table and Cognito user pool.
+
+Resources:
+  TasksTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      TableName: taskcloud-tasks
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: taskId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: taskId
+          KeyType: RANGE
+
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      UserPoolName: taskcloud-users
+      # D-003: only an admin can create users, which protects the Bedrock budget.
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      UsernameAttributes:
+        - email
+      UsernameConfiguration:
+        CaseSensitive: false
+      AutoVerifiedAttributes:
+        - email
+      MfaConfiguration: 'OFF'
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireUppercase: true
+          RequireSymbols: false
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: taskcloud-web
+      UserPoolId: !Ref UserPool
+      # A browser cannot keep a secret, so a single-page app's client must not have one.
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      EnableTokenRevocation: true
+
+Outputs:
+  TableName:
+    Value: !Ref TasksTable
+    Export:
+      Name: taskcloud-data-TableName
+  TableArn:
+    Value: !GetAtt TasksTable.Arn
+    Export:
+      Name: taskcloud-data-TableArn
+  UserPoolId:
+    Value: !Ref UserPool
+    Export:
+      Name: taskcloud-data-UserPoolId
+  UserPoolArn:
+    Value: !GetAtt UserPool.Arn
+    Export:
+      Name: taskcloud-data-UserPoolArn
+  UserPoolClientId:
+    Value: !Ref UserPoolClient
+    Export:
+      Name: taskcloud-data-UserPoolClientId
