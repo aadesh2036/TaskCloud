@@ -2,6 +2,8 @@
 
 Everyone deploys from AWS CloudShell in `ap-south-1` (Mumbai), one script each, in order. No access keys are involved (D-004).
 
+**Nothing here has run against real AWS yet.** The scripts, templates and policies are tested locally (see `docs/LOCAL_DEV.md`), so expect the first deploy to find something, most likely a missing action on `taskcloud-cfn-role`. That is what the troubleshooting table is for.
+
 **The golden rule: if a script fails, do not fix it in the console.** The live setup would no longer match the code. Send the log file to Aadesh, wait for the fix, then run the same script again. Every script is safe to re-run.
 
 ## Deploy order
@@ -54,7 +56,9 @@ Runs as `aadesh-admin`, without the deploy role, because it creates that role. T
 
 - It lists the active inference profiles in `ap-south-1`.
 - It sends one test message to the configured model. If this fails the script warns but does not stop, because the fallback is a parameter change.
-- **Confirm the AWS Budgets subscription email** if one arrives, and then create the users (`docs/IAM_ACL.md`).
+- Then create the users (`docs/IAM_ACL.md`).
+
+The converse test also matters for billing setup: being the first call on the account, it can complete the Marketplace subscription, which the planner's own role has no permission to do.
 
 ### 1. `scripts/1_data.sh` (Sanchit)
 
@@ -100,11 +104,14 @@ Creates a confirmed user with the welcome message suppressed. It prompts for the
 
 ### End-to-end test (Aadesh)
 
-`scripts/3_agent.sh` prints the commands, which are:
+Run this once the site and demo user exist. The simplest test is in the site itself:
 
-1. Get a token by logging in to the site and copying it from the browser, or use the site directly.
-2. `POST /plan` with the prompt "DBMS exam on Friday, finish my lab record, and revise two hours a day."
-3. Check that new tasks appear on the dashboard with an AI badge.
+1. Log in with the demo user.
+2. In **Plan with AI**, enter "DBMS exam on Friday, finish my lab record, and revise two hours a day."
+3. Check that new tasks appear on the dashboard with an AI badge, and in the DynamoDB table.
+4. Attach a file to a task, check that **Open** appears, and check the indexer's log group in CloudWatch.
+
+`scripts/3_agent.sh` also prints a curl version of the planner test, for evidence.
 
 ## Switching to Amazon Nova
 
@@ -126,7 +133,7 @@ Confirm the exact Nova profile ID with `aws bedrock list-inference-profiles --re
 | "Prerequisite stack ... is not ready" | An earlier person has not finished | Wait for them, then re-run |
 | "is in ROLLBACK_COMPLETE state" | The first create of the stack failed | Send the log to Aadesh, who reads the events, deletes the stack and fixes the cause. Team users cannot delete stacks. Then re-run. |
 | `AccessDenied` on `iam:PassRole` | The user is not in `TaskCloud-Deployers`, or `iam/rendered` was not applied | Send the log to Aadesh |
-| `AccessDenied` for a resource inside the events | `taskcloud-cfn-role` is missing an action | Send the log to Aadesh, who adds it in `infra/0_foundation.yaml` and re-runs script 0 |
+| `AccessDenied` or `not authorized` for a resource inside the events | `taskcloud-cfn-role` is missing an action | Send the log to Aadesh, who adds the action named in the error to `infra/0_foundation.yaml` and re-runs script 0. If this was a stack's first create, Aadesh also deletes that stack. Then re-run. |
 | `No export named taskcloud-...` | A prerequisite stack is missing or old | Re-run the earlier script |
 | Export cannot be updated because it is in use | A template change renames an export another stack imports | Aadesh deletes the importing stack first |
 | Planner returns 500, logs show `AccessDeniedException` | Model access or Marketplace subscription is missing | Aadesh re-tests in the playground, or switches to Nova |

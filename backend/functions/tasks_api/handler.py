@@ -22,6 +22,9 @@ from shared.validation import clean_new_task, clean_patch, require_task_id, sani
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# Higher than the 500 shown by GET /tasks: a cap here would silently break totals and streaks.
+PROGRESS_LIMIT = 5000
+
 
 def _task_id(event: dict) -> str:
     return require_task_id((event.get("pathParameters") or {}).get("id"))
@@ -82,7 +85,7 @@ def delete_task(event: dict, user_id: str) -> dict:
 
 def get_progress(event: dict, user_id: str) -> dict:
     # Eventually consistent on purpose: cheaper, and a short delay does not matter here.
-    tasks, _ = get_store().list_tasks(user_id, consistent=False)
+    tasks, _ = get_store().list_tasks(user_id, consistent=False, limit=PROGRESS_LIMIT)
     return json_response(200, compute_progress(tasks, now_utc()))
 
 

@@ -434,3 +434,33 @@ def test_prompt_is_not_logged(backend, caplog):
     plan(happy_path(good_task()), prompt=secret)
     plan(FakeBedrock(RuntimeError("x")), prompt=secret)
     assert secret not in caplog.text
+
+
+# --- Real boto3 request validation, with no network ---
+
+
+def test_requests_and_responses_match_the_real_converse_schema(backend):
+    """Stubber validates against botocore's service model, which a hand-written fake cannot do."""
+    from botocore.stub import Stubber
+
+    client = boto3.client("bedrock-runtime", region_name="ap-south-1")
+    usage = {"inputTokens": 1, "outputTokens": 1, "totalTokens": 2}
+    metrics = {"latencyMs": 1}
+
+    def reply(response):
+        return {**response, "usage": usage, "metrics": metrics}
+
+    get_store().put_task(
+        {"userId": "user-a", "taskId": new_id(), "title": "Existing", "status": "todo", "dueDate": TOMORROW,
+         "priority": "low", "estMinutes": 30}
+    )
+    with Stubber(client) as stub:
+        stub.add_response("converse", reply(tool_call("get_open_tasks")))
+        stub.add_response("converse", reply(tool_call("create_tasks", {"tasks": [good_task(), good_task(priority="x")]})))
+        stub.add_response("converse", reply(final_text()))
+        # Parameter validation runs inside the client, before the stub answers. A bad
+        # tool schema, message or tool result would raise ParamValidationError here.
+        response, payload = plan(client)
+        stub.assert_no_pending_responses()
+    assert response["statusCode"] == 200
+    assert len(payload["tasks"]) == 1 and len(payload["rejected"]) == 1

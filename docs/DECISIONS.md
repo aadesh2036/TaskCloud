@@ -156,3 +156,39 @@ Newest entries go at the bottom. D-001 to D-013 are the agreed seed decisions. L
 - **Reason:** A deploy role or stolen session could act in any region, so a Mumbai-only trail would miss it. The first copy of management events is free, so only storage costs money, and 90 days covers the course.
 - **Alternatives:** A single-region trail (blind to other regions and to global service events).
 - **Files:** `infra/0_foundation.yaml`
+
+## D-023: A few small files beyond the listed layout
+- **Date:** 2026-11-07
+- **Decision:** Add `pyproject.toml` (pytest and ruff settings), `.gitattributes` (LF line endings), `local/stub_bedrock.py` (the scripted model), `backend/shared/attachments.py`, `backend/shared/progress.py`, `backend/shared/timeutil.py`, `frontend/config.local.example.json` and `frontend/scripts/ensure-config.mjs`.
+- **Reason:** `frontend/public/config.json` must stay git-ignored, so a fresh clone needs another way to get a local config. Team members use Windows, where CRLF line endings would break Bash in CloudShell. The rest keeps each file to one job.
+- **Alternatives:** Committing a config file (breaks the no-generated-config rule); one large `server.py` or shared module.
+- **Files:** as listed
+
+## D-024: Node 18 builds, with engine warnings from a dependency
+- **Date:** 2026-11-07
+- **Decision:** Keep `aws-amplify` 6.22.2 and Vite 5.4.21. `npm ci` on Node 18 prints `EBADENGINE` warnings, because some AWS SDK packages inside Amplify declare Node 20 or later. The warnings are not errors, and the build succeeds on Node 18 and 20.
+- **Reason:** These packages run in the browser bundle, not on Node, so the declared Node version does not affect the running site. Vite 5 is the newest major that supports Node 18.
+- **Alternatives:** An older Amplify release (misses fixes, and could still warn); dropping Node 18 (the brief requires it).
+- **Files:** `frontend/package.json`, `frontend/package-lock.json`
+
+## D-025: A re-run of 3_agent.sh keeps the current model
+- **Date:** 2026-11-07
+- **Decision:** `scripts/3_agent.sh` reads `/taskcloud/modelId` and passes it back as the `ModelId` parameter, unless a `MODEL_ID` environment variable overrides it.
+- **Reason:** The script must be re-run after API updates. Otherwise each re-run would silently revert a switch to Nova, back to a model the account may not be able to pay for.
+- **Alternatives:** Always using the template default (the silent revert described).
+- **Files:** `scripts/3_agent.sh`, `docs/DEPLOYMENT.md`
+
+## D-026: Fonts load from Google Fonts, with system fallbacks
+- **Date:** 2026-11-07
+- **Decision:** `frontend/index.html` loads Kalam (headings and margin dates) and Atkinson Hyperlegible (everything else) from Google Fonts.
+- **Reason:** Plain CSS with no UI library or font package. If the fonts are blocked or offline, the page still works with system fonts.
+- **Alternatives:** Bundling font files (adds weight to the repo); system fonts only (loses the exercise-book character).
+- **Files:** `frontend/index.html`, `frontend/src/styles.css`
+
+## D-027: GET /progress reads up to 5000 tasks
+- **Date:** 2026-11-07
+- **Decision:** `GET /tasks` stops at 500 as agreed, but `GET /progress` reads up to 5000.
+- **Reason:** With the same cap, totals and streaks would silently go wrong for anyone past 500 tasks. 5000 is far beyond a course's use and still bounds the work of one request.
+- **Alternatives:** No cap (unbounded read inside a 10-second Lambda).
+- **Files:** `backend/functions/tasks_api/handler.py`
+

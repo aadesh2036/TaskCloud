@@ -490,3 +490,71 @@ def test_teardown_skips_missing_stacks(sandbox):
     assert result.returncode == 0
     deletes = [value_after(c, "--stack-name") for c in sandbox.named("cloudformation", "delete-stack")]
     assert deletes == ["taskcloud-api", "taskcloud-data", "taskcloud-foundation"]
+
+
+# --- CLI calls checked against the real AWS service models, with no network ---
+
+GLOBAL_FLAGS = {"--query", "--output", "--max-items"}
+HIGH_LEVEL_COMMANDS = {"cloudformation deploy", "cloudformation package", "cloudformation wait", "s3 rm"}
+CLI_TO_SERVICE = {"s3api": "s3"}
+
+
+def _operation_model(session, service, command):
+    model = session.get_service_model(CLI_TO_SERVICE.get(service, service))
+    wanted = command.replace("-", "")
+    for name in model.operation_names:
+        if name.lower() == wanted:
+            return model.operation_model(name)
+    raise AssertionError(f"{service} has no operation {command}")
+
+
+def _norm(name):
+    return name.replace("-", "").lower()
+
+
+@needs_bash
+@pytest.mark.parametrize(
+    "script, args, stdin",
+    [
+        ("0_foundation.sh", ["me@example.com"], None),
+        ("1_data.sh", [], None),
+        ("2_api.sh", [], None),
+        ("3_agent.sh", [], None),
+        ("4_frontend.sh", [], None),
+        ("create_demo_user.sh", ["demo@example.com"], "S3cretPass1\n"),
+        ("99_teardown.sh", [], "DELETE\n"),
+    ],
+)
+def test_every_cli_call_exists_in_the_aws_service_model(sandbox, script, args, stdin):
+    import botocore.session
+
+    session = botocore.session.get_session()
+    assert sandbox.run(script, *args, input_text=stdin).returncode == 0
+    checked = 0
+    for call in sandbox.calls():
+        if call[0] == "curl" or " ".join(call[:2]) in HIGH_LEVEL_COMMANDS:
+            continue
+        operation = _operation_model(session, call[0], call[1])
+        members = {_norm(m) for m in operation.input_shape.members} if operation.input_shape else set()
+        for flag in (c for c in call[2:] if c.startswith("--")):
+            if flag not in GLOBAL_FLAGS:
+                assert _norm(flag) in members, f"{call[0]} {call[1]} has no flag {flag}"
+        checked += 1
+    assert checked
+
+
+def test_output_fields_read_by_scripts_exist_in_the_service_models():
+    import botocore.session
+
+    session = botocore.session.get_session()
+
+    def output(service, operation):
+        return session.get_service_model(service).operation_model(operation).output_shape
+
+    create = output("amplify", "CreateDeployment").members
+    assert "jobId" in create and "zipUploadUrl" in create
+    assert "status" in output("amplify", "GetJob").members["job"].members["summary"].members
+    assert "status" in output("amplify", "StartDeployment").members["jobSummary"].members
+    summaries = output("bedrock", "ListInferenceProfiles").members["inferenceProfileSummaries"].member.members
+    assert {"status", "inferenceProfileId"} <= set(summaries)
+    assert "RouteSettings" in output("apigatewayv2", "UpdateStage").members

@@ -335,3 +335,14 @@ def test_list_paginates_and_caps_at_limit(aws):
     assert len(store.list_tasks("user-a", limit=5)[0]) == 5
     assert store.list_tasks("user-a", limit=5)[1] is True
     assert store.list_tasks("user-a", limit=12) == (store.list_tasks("user-a")[0], False)
+
+
+def test_progress_counts_tasks_beyond_the_list_limit(backend):
+    tasks = [
+        {"userId": "user-a", "taskId": new_id(), "title": "t", "dueDate": "2026-11-10", "status": "todo"}
+        for _ in range(520)
+    ]
+    get_store().put_tasks(tasks)
+    assert body_of(handler(api_event("GET /progress"), None))["total"] == 520
+    listed = body_of(handler(api_event("GET /tasks"), None))
+    assert len(listed["tasks"]) == 500 and listed["truncated"] is True

@@ -107,7 +107,7 @@ All routes use payload format 2.0 and require a valid JWT.
 | `POST /tasks` | tasks-api | Validates and creates a task with `source: manual`. Requires `title` and `dueDate`; `priority` defaults to `medium`, `estMinutes` to 30. Unknown fields are rejected (D-014). | 201 |
 | `PATCH /tasks/{id}` | tasks-api | Updates `title`, `dueDate`, `priority`, `status`, `estMinutes` only, on the condition that the item exists. | 200 |
 | `DELETE /tasks/{id}` | tasks-api | Deletes the item and its attachment object, if any. | 204 |
-| `GET /progress` | tasks-api | Eventually consistent Query. Returns `total`, `done`, `todo`, `completedToday`, `streakDays`, `last7Days` (oldest first, `{date, done}`), all in IST using a fixed +05:30 offset. | 200 |
+| `GET /progress` | tasks-api | Eventually consistent Query, up to 5000 items (D-027). Returns `total`, `done`, `todo`, `completedToday`, `streakDays`, `last7Days` (oldest first, `{date, done}`), all in IST using a fixed +05:30 offset. | 200 |
 | `POST /tasks/{id}/attachment-url` | tasks-api | Body `{"filename": "...", "size": n}`. Checks ownership. Returns a pre-signed POST valid for 5 minutes with a 10 MB limit and the key `userId/taskId/<sanitized filename>`. | 200 |
 | `GET /tasks/{id}/attachment-url` | tasks-api | Returns a 5-minute pre-signed GET for the attached file (D-010). | 200 |
 | `POST /plan` | planner-agent | Runs the planner agent. | 200 |

@@ -25,12 +25,28 @@ pip install -r requirements-dev.txt
 
 | Check | Command |
 |---|---|
-| Backend unit tests (moto for DynamoDB and S3) | `pytest` |
+| Backend, script, template and IAM tests | `pytest` |
 | Python lint | `ruff check backend local` |
 | Templates | `cfn-lint infra/*.yaml` |
 | Scripts | `bash -n scripts/1_data.sh` (and the others), `shellcheck -x scripts/*.sh scripts/lib/*.sh` |
 | Frontend build | `cd frontend && npm run build` |
 | End-to-end smoke test, with the local server running | `python local/smoke_test.py` |
+
+`pytest` covers more than the Python code, and none of it can reach AWS:
+
+| File | What it checks |
+|---|---|
+| `backend/tests/test_tasks_api.py` | Routes and indexer, against both DynamoDB (moto) and the local store |
+| `backend/tests/test_planner.py` | Tool loop, limits, validation, user isolation and prompt injection, with a fake model, plus real Converse request validation with botocore's Stubber |
+| `backend/tests/test_local_server.py` | The real local server, with the smoke test pointed at it |
+| `backend/tests/test_infra.py` | Templates against the agreed design |
+| `backend/tests/test_scripts.py` | Deploy scripts run against a generated fake `aws` CLI placed first on `PATH`, and every CLI flag checked against the AWS service models |
+| `backend/tests/test_iam.py` | Policy files, including that each person's script calls are allowed by their own policy |
+| `backend/tests/test_docs.py` | Named files exist, decisions are complete, nothing secret is tracked |
+
+The script tests need Bash, so they are skipped on Windows PowerShell. Run them in Git Bash or WSL.
+
+On Node 18, `npm ci` prints `EBADENGINE` warnings from AWS SDK packages. These are expected, and the build still succeeds (D-024).
 
 ## Local modes
 

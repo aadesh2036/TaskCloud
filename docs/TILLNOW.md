@@ -1,10 +1,10 @@
 # TILLNOW
 
 ## Last updated
-2026-11-07 10:58 IST, by Claude Code session (M7)
+2026-11-07 11:03 IST, by Claude Code session (M8)
 
 ## Current state
-The local app, templates, scripts and IAM policies are complete and tested locally. Nothing has been deployed.
+Everything passes local verification: tests, smoke test, browser flows, cfn-lint and shellcheck. Nothing has been deployed.
 
 ## Milestones
 | ID | Milestone | Status | Notes |
@@ -17,16 +17,21 @@ The local app, templates, scripts and IAM policies are complete and tested local
 | M5 | CloudFormation templates | Done | cfn-lint clean; design checks in test_infra.py |
 | M6 | Deploy scripts | Done | bash -n and shellcheck clean; flow tested with a fake aws CLI |
 | M7 | IAM policy files and IAM_ACL.md | Done | Every script call checked against its owner's policy |
-| M8 | Full local verification and smoke test | Not started | |
+| M8 | Full local verification and smoke test | Done | All checks pass on a fresh clone |
 | M9 | Final docs pass | Not started | |
 
 ## Next step
-Start M8: run the full local verification and fix what it finds.
+Start M9: final docs pass.
 
 ## Open questions and blockers
 - None yet.
 
 ## Change log
+### 2026-11-07 11:03 IST, M8
+- **Files:** `backend/functions/tasks_api/handler.py`, `backend/tests/*`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/DEPLOYMENT.md`, `docs/LOCAL_DEV.md`
+- **Tests:** pytest 467 passed; on a fresh clone 465 passed on Python 3.11, 3.13 and 3.14 before the final progress fix; cfn-lint, bash -n, shellcheck and ruff clean; npm ci and build passed; smoke test passed against the README commands; browser flows passed with no console errors
+- **Decisions:** D-023 to D-027. Found and fixed: GET /progress capped at 500 tasks
+
 ### 2026-11-07 10:58 IST, M7
 - **Files:** `iam/policies/*`, `backend/tests/test_iam.py`, `docs/IAM_ACL.md`
 - **Tests:** pytest passed; ruff clean
