@@ -1,0 +1,7 @@
+# Team members use Windows; CRLF would break Bash scripts in CloudShell.
+*.sh   text eol=lf
+*.py   text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.pdf  binary

@@ -1,0 +1,22 @@
+# Dependencies and build output
+node_modules/
+dist/
+.build/
+__pycache__/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Script logs are evidence for each person, not source code
+logs/*.log
+
+# Local dev data and generated config
+local/.data/
+frontend/public/config.json
+iam/rendered/
+packaged-*.yaml
+*.zip
+
+# Never commit credentials
+.env
+.env.*
