@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Owner: Aadesh, as aadesh-admin. Usage: bash scripts/0_foundation.sh <ALERT_EMAIL> [BUDGET_LIMIT]
+# Owner: Aadesh, as aadesh-admin. Usage: bash scripts/0_foundation.sh [ALERT_EMAIL] [BUDGET_LIMIT]
 set -euo pipefail
 # shellcheck source-path=SCRIPTDIR source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 
-ALERT_EMAIL="${1:-}"
+ALERT_EMAIL="${1:-${ALERT_EMAIL:-aadeshmukh236@gmail.com}}"
 BUDGET_LIMIT="${2:-5}"
 MODEL_ID="${MODEL_ID:-$DEFAULT_MODEL_ID}"
 
