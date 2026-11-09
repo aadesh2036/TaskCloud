@@ -40,6 +40,11 @@ Aadesh: follow the pre-flight checks in `docs/DEPLOYMENT.md`, then run `bash scr
 9. After the final demo, Aadesh: `bash scripts/99_teardown.sh`, then delete the IAM users, group and policy.
 
 ## Change log
+### 2026-11-09 16:05 IST, add apigateway:TagResource and UntagResource to taskcloud-cfn-role
+- **Files:** `infra/0_foundation.yaml`, `docs/TILLNOW.md`
+- **Tests:** pytest 471 passed; ruff clean; cfn-lint clean; bash -n clean.
+- **Reason:** First deploy of stack 2 failed on DefaultStage with AccessDenied on apigateway:TagResource because CloudFormation applies stack tags to API Gateway stages.
+
 ### 2026-11-09 15:10 IST, switch default model to Amazon Nova Lite
 - **Files:** `scripts/lib/common.sh`, `scripts/0_foundation.sh`, `infra/3_agent.yaml`, `backend/tests/test_infra.py`, `backend/tests/test_scripts.py`, `docs/DECISIONS.md`, `docs/DEPLOYMENT.md`, `docs/LOCAL_DEV.md`, `docs/TILLNOW.md`
 - **Tests:** pytest 471 passed; ruff clean; cfn-lint clean; bash -n clean.

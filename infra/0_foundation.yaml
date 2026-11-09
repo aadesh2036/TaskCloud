@@ -20,6 +20,11 @@ Resources:
   # need permissions on the underlying services themselves.
   CfnRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W3037
     Properties:
       RoleName: taskcloud-cfn-role
       Description: Used by CloudFormation to deploy TaskCloud stacks 1 to 4.
@@ -196,6 +201,8 @@ Resources:
                   - apigateway:PUT
                   - apigateway:PATCH
                   - apigateway:DELETE
+                  - apigateway:TagResource
+                  - apigateway:UntagResource
                 Resource:
                   - !Sub 'arn:aws:apigateway:${AWS::Region}::/apis'
                   - !Sub 'arn:aws:apigateway:${AWS::Region}::/apis/*'
