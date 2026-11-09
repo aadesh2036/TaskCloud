@@ -183,7 +183,7 @@ def test_scripts_have_lf_endings(script):
 
 
 def test_default_model_is_the_agreed_profile():
-    assert "in.anthropic.claude-haiku-4-5-20251001-v1:0" in (REPO / "scripts/lib/common.sh").read_text(encoding="utf-8")
+    assert "apac.amazon.nova-lite-v1:0" in (REPO / "scripts/lib/common.sh").read_text(encoding="utf-8")
 
 
 # --- Lambda build ---
@@ -239,7 +239,7 @@ def test_foundation_deploys_without_role_and_checks_model(sandbox):
     assert "AlertEmail=me@example.com" in deploy and "BudgetLimit=7" in deploy
     assert sandbox.named("bedrock", "list-inference-profiles")
     converse = sandbox.named("bedrock-runtime", "converse")[0]
-    assert value_after(converse, "--model-id") == "in.anthropic.claude-haiku-4-5-20251001-v1:0"
+    assert value_after(converse, "--model-id") == "apac.amazon.nova-lite-v1:0"
 
 
 @needs_bash
@@ -368,13 +368,13 @@ def test_agent_applies_throttle_after_deploy(sandbox):
         "POST /plan": {"ThrottlingBurstLimit": 2, "ThrottlingRateLimit": 2}
     }
     assert "curl -i -X POST" in result.stdout and "https://api.test.invalid/plan" in result.stdout
-    assert "ModelId=in.anthropic.claude-haiku-4-5-20251001-v1:0" in calls[deploy]
+    assert "ModelId=apac.amazon.nova-lite-v1:0" in calls[deploy]
 
 
 @needs_bash
 def test_agent_rerun_keeps_a_switched_model(sandbox):
-    assert sandbox.run("3_agent.sh", FAKE_MODEL="apac.amazon.nova-lite-v1:0").returncode == 0
-    assert "ModelId=apac.amazon.nova-lite-v1:0" in sandbox.deploys()[0]
+    assert sandbox.run("3_agent.sh", FAKE_MODEL="apac.amazon.nova-pro-v1:0").returncode == 0
+    assert "ModelId=apac.amazon.nova-pro-v1:0" in sandbox.deploys()[0]
 
 
 @needs_bash

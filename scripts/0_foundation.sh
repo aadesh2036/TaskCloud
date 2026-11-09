@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Owner: Aadesh, as aadesh-admin. Usage: bash scripts/0_foundation.sh [ALERT_EMAIL] [BUDGET_LIMIT]
+# Owner: Aadesh, as aadesh-admin. Usage: bash scripts/0_foundation.sh <ALERT_EMAIL> [BUDGET_LIMIT]
 set -euo pipefail
 # shellcheck source-path=SCRIPTDIR source=lib/common.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 
-ALERT_EMAIL="${1:-${ALERT_EMAIL:-aadeshmukh236@gmail.com}}"
+ALERT_EMAIL="${1:-${ALERT_EMAIL:-}}"
 BUDGET_LIMIT="${2:-5}"
 MODEL_ID="${MODEL_ID:-$DEFAULT_MODEL_ID}"
 
@@ -38,8 +38,8 @@ if aws bedrock-runtime converse \
   echo "Model check passed."
 else
   echo "WARNING: this account could not call $MODEL_ID."
-  echo "Check model access and billing in the Bedrock console, or use an Amazon Nova profile."
-  echo "See 'Switching to Amazon Nova' in docs/DEPLOYMENT.md."
+  echo "Check model access and permissions in the Bedrock console, or check your Amazon Nova profile."
+  echo "See 'Switching Bedrock Models' in docs/DEPLOYMENT.md."
 fi
 
 section "Next steps"

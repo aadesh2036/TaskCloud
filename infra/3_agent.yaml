@@ -7,7 +7,7 @@ Parameters:
   ModelId:
     Type: String
     Description: Bedrock model or inference profile ID.
-    Default: in.anthropic.claude-haiku-4-5-20251001-v1:0
+    Default: apac.amazon.nova-lite-v1:0
 
 Resources:
   # D-006: switching models only means changing this value.

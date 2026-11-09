@@ -1,7 +1,7 @@
 # TILLNOW
 
 ## Last updated
-2026-11-07 12:10 IST, by Claude Code session (blue theme and mobile)
+2026-11-09 15:10 IST, default model switch to Amazon Nova Lite
 
 ## Current state
 The repository is complete and verified locally: app, tests, templates, scripts, IAM policies and docs. The frontend is a blue kawaii stationery journal with a calendar, a daily quote and the mascot Mochi, and it has a phone layout with bottom tabs. Nothing has been deployed to AWS. The templates, IAM permissions, real Cognito and real Bedrock can only be proven by the first real deploy.
@@ -24,8 +24,7 @@ The repository is complete and verified locally: app, tests, templates, scripts,
 Aadesh: follow the pre-flight checks in `docs/DEPLOYMENT.md`, then run `bash scripts/0_foundation.sh <ALERT_EMAIL> 5` in CloudShell in ap-south-1.
 
 ## Open questions and blockers
-- **Aadesh:** choose the budget alert email. It is passed to `scripts/0_foundation.sh` at deploy time and is not stored in the repo.
-- **Aadesh:** confirm that this account can pay for Claude through Marketplace. The model check in `scripts/0_foundation.sh` shows this. If it fails, switch to Nova (see `docs/DEPLOYMENT.md`).
+- **Aadesh:** choose the budget alert email. It is passed to `scripts/0_foundation.sh` at deploy time, or set via `.env` / environment variable.
 - **Aadesh:** the Git author email from local Git config is in every commit's metadata. Before pushing to a public repository, decide whether to use a GitHub no-reply address.
 - **Team:** expect the first deploy to find something, most likely a missing action on `taskcloud-cfn-role`. Do not fix it in the console. Send the log to Aadesh.
 
@@ -41,6 +40,11 @@ Aadesh: follow the pre-flight checks in `docs/DEPLOYMENT.md`, then run `bash scr
 9. After the final demo, Aadesh: `bash scripts/99_teardown.sh`, then delete the IAM users, group and policy.
 
 ## Change log
+### 2026-11-09 15:10 IST, switch default model to Amazon Nova Lite
+- **Files:** `scripts/lib/common.sh`, `scripts/0_foundation.sh`, `infra/3_agent.yaml`, `backend/tests/test_infra.py`, `backend/tests/test_scripts.py`, `docs/DECISIONS.md`, `docs/DEPLOYMENT.md`, `docs/LOCAL_DEV.md`, `docs/TILLNOW.md`
+- **Tests:** pytest 471 passed; ruff clean; cfn-lint clean; bash -n clean.
+- **Decisions:** D-032
+
 ### 2026-11-07 12:10 IST, blue theme and mobile layout (after M9)
 - **Files:** `frontend/src/styles.css`, `frontend/src/components/Dashboard.jsx`, `frontend/src/components/CalendarView.jsx`, `frontend/src/components/Confetti.jsx`, `frontend/index.html`, `backend/tests/test_frontend_content.py`, `README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`
 - **Tests:** pytest 471 passed; ruff clean; smoke test passed; npm ci and build on Node 18 and 20; 96 touch-emulated checks at 320, 360, 390 and 768 wide and phone landscape, plus desktop; 34 desktop regression checks. No real phone was tested.

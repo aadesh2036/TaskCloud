@@ -7,9 +7,15 @@ export AWS_REGION="$REGION" AWS_DEFAULT_REGION="$REGION"
 export AWS_PAGER=""
 
 # shellcheck disable=SC2034  # Used by the scripts that source this file.
-DEFAULT_MODEL_ID="in.anthropic.claude-haiku-4-5-20251001-v1:0"
+DEFAULT_MODEL_ID="apac.amazon.nova-lite-v1:0"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+if [ -f "$REPO_ROOT/.env" ]; then
+  # shellcheck source=/dev/null
+  set -a
+  source "$REPO_ROOT/.env"
+  set +a
+fi
 LOG_FILE=""
 TEE_PID=""
 

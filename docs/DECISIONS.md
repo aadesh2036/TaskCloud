@@ -221,3 +221,11 @@ Newest entries go at the bottom. D-001 to D-013 are the agreed seed decisions. L
 - **Alternatives:** A hamburger menu (hides navigation behind an extra tap); stacking everything on one long page (the previous layout).
 - **Files:** `frontend/src/styles.css`, `frontend/src/components/Dashboard.jsx`, `frontend/src/components/CalendarView.jsx`, `frontend/src/components/Confetti.jsx`, `frontend/index.html`
 
+## D-032: Switch default Bedrock model to Amazon Nova Lite
+- **Date:** 2026-11-09
+- **Decision:** Default Bedrock model switches from Claude Haiku 4.5 (`in.anthropic.claude-haiku-4-5-20251001-v1:0`) to Amazon Nova Lite (`apac.amazon.nova-lite-v1:0`).
+- **Reason:** Claude models on AWS Bedrock require AWS Marketplace third-party subscription and billing terms that fail on Indian (AISPL) student/course accounts. Amazon Nova Lite is a native Amazon foundation model supporting the Bedrock Converse API and tool use without Marketplace subscription barriers.
+- **Alternatives:** Claude Haiku (Marketplace billing failed on account); Amazon Nova Micro (does not support Converse API tool use).
+- **Files:** `scripts/lib/common.sh`, `infra/3_agent.yaml`, `docs/DEPLOYMENT.md`, `docs/LOCAL_DEV.md`
+
+

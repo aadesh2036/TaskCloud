@@ -61,7 +61,7 @@ On Node 18, `npm ci` prints `EBADENGINE` warnings from AWS SDK packages. These a
 Real Bedrock mode uses your own AWS profile, needs model access, and costs money:
 
 ```bash
-PLANNER_MODE=bedrock MODEL_ID=in.anthropic.claude-haiku-4-5-20251001-v1:0 AWS_PROFILE=<YOUR_PROFILE> AWS_REGION=ap-south-1 python3 local/server.py
+PLANNER_MODE=bedrock MODEL_ID=apac.amazon.nova-lite-v1:0 AWS_PROFILE=<YOUR_PROFILE> AWS_REGION=ap-south-1 python3 local/server.py
 ```
 
 This mode also needs boto3 installed. Stub mode does not.

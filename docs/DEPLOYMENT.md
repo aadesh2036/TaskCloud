@@ -38,9 +38,7 @@ Then run your script with `bash scripts/<your_script>.sh`. Using `bash` works wh
 ## Aadesh: pre-flight checks
 
 1. Turn on MFA for the root user, then work as `aadesh-admin` rather than root.
-2. Add a valid payment method. In Bedrock, submit Anthropic's use-case details and test the model once in the playground from Mumbai.
-
-**Billing risk:** Claude on Bedrock is billed through AWS Marketplace, so promotional credits may not cover it, and Indian (AISPL) accounts have reported payment errors when subscribing. The model check in `scripts/0_foundation.sh` tells you whether this account can call the model. If it fails, see "Switching to Amazon Nova" below.
+2. The default model is Amazon Nova Lite (`apac.amazon.nova-lite-v1:0`), which is an Amazon foundation model and does not require third-party Marketplace subscription. Test the model in the Bedrock console or via `scripts/0_foundation.sh`.
 
 ## What each script does
 
@@ -113,18 +111,18 @@ Run this once the site and demo user exist. The simplest test is in the site its
 
 `scripts/3_agent.sh` also prints a curl version of the planner test, for evidence.
 
-## Switching to Amazon Nova
+## Switching Bedrock Models
 
-Aadesh runs this, with no redeploy. Containers cache the value, so also force a new container by updating the function's description:
+The default model is Amazon Nova Lite (`apac.amazon.nova-lite-v1:0`). To switch to another inference profile or model (e.g. Nova Pro or Claude), Aadesh runs this with no redeploy. Containers cache the value, so also force a new container by updating the function's description:
 
 ```bash
 aws ssm put-parameter --name /taskcloud/modelId --type String --overwrite \
-  --value apac.amazon.nova-lite-v1:0 --region ap-south-1
+  --value <NEW_MODEL_ID> --region ap-south-1
 aws lambda update-function-configuration --function-name taskcloud-planner-agent \
   --description "model switched" --region ap-south-1
 ```
 
-Confirm the exact Nova profile ID with `aws bedrock list-inference-profiles --region ap-south-1` first, because the ID above is only an example. A later `scripts/3_agent.sh` run reads the current parameter and keeps it, so it will not undo the switch.
+Confirm the active profile IDs with `aws bedrock list-inference-profiles --region ap-south-1` first. A later `scripts/3_agent.sh` run reads the current parameter and keeps it, so it will not undo the switch.
 
 ## Troubleshooting
 

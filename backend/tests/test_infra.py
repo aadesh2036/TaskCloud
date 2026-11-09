@@ -285,7 +285,7 @@ def test_planner_timeout_and_memory():
 
 def test_default_model_is_the_agreed_profile():
     default = TEMPLATES["3_agent"]["Parameters"]["ModelId"]["Default"]
-    assert default == "in.anthropic.claude-haiku-4-5-20251001-v1:0"
+    assert default == "apac.amazon.nova-lite-v1:0"
 
 
 def test_s3_to_lambda_cycle_is_avoided():
